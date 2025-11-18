@@ -1,0 +1,15 @@
+# .gitignore
+
+# Fichiers de secrets API
+.env
+
+# Fichier des identifiants Google Cloud/Calendar (contient le secret client)
+credentials.json
+
+# Fichier de jeton d'accès généré (contient l'accès à votre compte)
+token.json
+
+# Environnements virtuels et cache Python
+venv/
+__pycache__/
+*.pyc
