@@ -3,6 +3,7 @@ import json
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 client = genai.Client()
@@ -37,8 +38,10 @@ def parse_multimodal_content(text_input, file_path=None, timezone='America/Toron
         print(f"Chargement du fichier : {file_path}")
         uploaded_file = client.files.upload(file=file_path)
         contents.append(uploaded_file)
-        contents.append(text_input)
-    else:
+        
+        print("Attente de l'activation du fichier (2 secondes)...")
+        time.sleep(2) 
+
         contents.append(text_input)
 
     system_instruction = (
