@@ -1,1 +1,175 @@
-const API_ENDPOINT = 'https://web-production-d5887.up.railway.app/schedule_event';
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar Auto-Agent</title>
+    <style>
+        /* Styles CSS pour un look mobile-friendly */
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f4f4f9; }
+        #main-container { width: 90%; max-width: 500px; background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #4285F4; text-align: center; margin-bottom: 20px; }
+        button { padding: 10px 20px; margin: 5px 0; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; transition: background-color 0.3s; }
+        #record-button { background-color: #DB4437; color: white; }
+        #record-button:hover { background-color: #a72d22; }
+        #stop-button { background-color: #F4B400; color: white; display: none; }
+        #stop-button:hover { background-color: #c79000; }
+        #file-upload-section, #instruction-section { margin-top: 15px; padding: 15px; border: 1px dashed #ccc; border-radius: 8px; }
+        #status-message { margin-top: 20px; padding: 10px; border-radius: 8px; min-height: 40px; background-color: #eee; }
+        input[type="file"] { margin-top: 10px; }
+        textarea { width: 100%; height: 80px; margin-top: 10px; padding: 8px; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; }
+        #send-button { background-color: #0F9D58; color: white; margin-top: 20px; }
+        #send-button:hover { background-color: #097d47; }
+    </style>
+</head>
+<body>
+
+<div id="main-container">
+    <h1>📅 Agent Vocal</h1>
+
+    <div id="file-upload-section">
+        <label for="fileInput">Document ou Audio à analyser (Optionnel) :</label>
+        <input type="file" id="fileInput" accept="audio/*, .pdf, image/*">
+    </div>
+
+    <div id="instruction-section">
+        <p>Instructions ou Requête :</p>
+        <textarea id="instructionText" placeholder="Ex: Planifie la réunion de 10h sur ce PDF, ou : 'Rdv chez le coiffeur vendredi à 18h'"></textarea>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <button id="record-button">🎙️ Enregistrer un message vocal</button>
+        <button id="stop-button">🛑 Arrêter l'enregistrement</button>
+    </div>
+
+    <button id="send-button">🚀 Planifier l'événement</button>
+
+    <div id="status-message">Prêt.</div>
+</div>
+
+<script>
+    // *************************************************************
+    // ⚠️ REMPLACER VOTRE URL ICI !
+    // *************************************************************
+    const API_ENDPOINT = 'https://web-production-d5887.up.railway.app/schedule_event'; 
+    
+    // Éléments DOM
+    const recordButton = document.getElementById('record-button');
+    const stopButton = document.getElementById('stop-button');
+    const sendButton = document.getElementById('send-button');
+    const statusMessage = document.getElementById('status-message');
+    const instructionText = document.getElementById('instructionText');
+    const fileInput = document.getElementById('fileInput');
+
+    let mediaRecorder;
+    let audioChunks = [];
+
+    // ----------------------------------------------------------------
+    // 1. GESTION DE L'ENREGISTREMENT VOCAL (JavaScript)
+    // ----------------------------------------------------------------
+
+    recordButton.onclick = async () => {
+        try {
+            // Demande l'accès au microphone
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm; codecs=opus' });
+                const audioFile = new File([audioBlob], "voice_memo.webm", { type: 'audio/webm; codecs=opus' });
+                
+                // Assigner l'audio au champ de fichier invisible pour l'envoi
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(audioFile);
+                fileInput.files = dataTransfer.files;
+
+                statusMessage.textContent = "✅ Audio enregistré et prêt à être planifié.";
+                
+                // Arrêter la piste du micro
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            recordButton.style.display = 'none';
+            stopButton.style.display = 'inline-block';
+            statusMessage.textContent = "🔴 Enregistrement en cours...";
+
+        } catch (err) {
+            statusMessage.textContent = `❌ Erreur d'accès au micro : ${err.message}`;
+            console.error(err);
+        }
+    };
+
+    stopButton.onclick = () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            recordButton.style.display = 'inline-block';
+            stopButton.style.display = 'none';
+        }
+    };
+
+    // ----------------------------------------------------------------
+    // 2. ENVOI DES DONNÉES À L'API FASTAPI (Upload Multimodal)
+    // ----------------------------------------------------------------
+
+    sendButton.onclick = async () => {
+        const formData = new FormData();
+        const instruction = instructionText.value.trim();
+        const file = fileInput.files[0];
+
+        if (!instruction && !file) {
+            statusMessage.textContent = "❌ Veuillez fournir du texte/instruction ou un fichier.";
+            return;
+        }
+
+        // Ajouter l'instruction texte (même si elle est vide, nous envoyons au moins la requête)
+        formData.append('instruction', instruction || 'Planifie l\'événement contenu dans le fichier.');
+
+        // Ajouter le fichier (si présent)
+        if (file) {
+            formData.append('file', file);
+        }
+        
+        statusMessage.textContent = "⏳ Envoi à l'IA et planification en cours...";
+        sendButton.disabled = true;
+
+        try {
+            const response = await fetch(API_ENDPOINT, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                let msg = `✅ Succès ! ${result.count} événement(s) créé(s).`;
+                if (result.events && result.events.length > 0) {
+                     msg += ` Le premier événement est : ${result.events[0].summary}.`;
+                }
+                statusMessage.textContent = msg;
+                instructionText.value = ''; // Nettoyer le champ après succès
+                fileInput.value = ''; // Réinitialiser le fichier
+            } else {
+                statusMessage.textContent = `❌ Erreur (${response.status}) : ${result.detail || 'Erreur inconnue.'}`;
+            }
+
+        } catch (error) {
+            statusMessage.textContent = `❌ Erreur de connexion au serveur : ${error.message}`;
+            console.error('API Error:', error);
+        } finally {
+            sendButton.disabled = false;
+        }
+    };
+
+    // Initialisation
+    statusMessage.textContent = `Prêt. L'API est configurée pour : ${API_ENDPOINT}`;
+
+</script>
+
+</body>
+</html>
