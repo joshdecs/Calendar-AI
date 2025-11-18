@@ -6,7 +6,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 
-from gemini_call1 import parse_text_with_gemini 
+from gemini_call1 import parse_multimodal_content
+
 
 SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
@@ -72,19 +73,47 @@ def main():
     creds = authenticate_google_calendar()
     service = build("calendar", "v3", credentials=creds)
 
-    user_input = input("\n🎙️ Dites-moi l'événement à planifier (ex: 'rendez-vous chez le dentiste le 20 mars à 9h'):\n> ")
+    # 2. Entrée utilisateur et sélection multimodale
+    print("\n=======================================================")
+    print("🤖 Agent de planification : Prêt à recevoir votre requête.")
+    print("=======================================================")
     
-    print("\n⏳ Analyse en cours par Gemini...")
-    event_details = parse_text_with_gemini(user_input)
+    file_path = None
     
-    if event_details:
-        print("✅ Analyse réussie. Détails structurés :")
-        print(f"   - Résumé: {event_details.get('summary')}")
-        print(f"   - Début:  {event_details.get('start_datetime')}")
-        
-        create_calendar_event(service, event_details)
+    # Demander si l'utilisateur veut uploader un fichier
+    use_file = input("Voulez-vous analyser un fichier (audio/doc) ? (y/n) : ").lower().strip()
+    if use_file == 'y':
+        file_path = input("Entrez le chemin complet du fichier (ex: C:/Users/Docs/horaire.pdf) : ").strip()
+        if not os.path.exists(file_path):
+            print(f"❌ Fichier non trouvé à : {file_path}. Retour à l'entrée texte.")
+            file_path = None
+
+    # Obtenir la requête texte ou l'instruction
+    if file_path:
+        user_input = input("Ajoutez une instruction pour le document (ex: 'Planifie tous les événements après 14h') :\n> ")
     else:
-        print("❌ Opération annulée car l'analyse Gemini a échoué ou n'a pas pu structurer les données.")
+        user_input = input("Entrez votre requête (ex: 'Rdv client mardi à 10h pour 1h30') :\n> ")
+        if not user_input.strip():
+            print("❌ Opération annulée : Aucune entrée fournie.")
+            return
+
+    # 3. Analyse PNL/Multimodale via Gemini
+    print("\n⏳ Analyse multimodale en cours par Gemini...")
+    all_events_details = parse_multimodal_content(user_input, file_path=file_path)
+    
+    # 4. Création des événements (Boucle)
+    if all_events_details and isinstance(all_events_details, list):
+        print(f"✅ Analyse réussie. {len(all_events_details)} événement(s) trouvé(s).")
+        
+        for i, event_details in enumerate(all_events_details):
+            print(f"\n--- Création Événement {i+1}/{len(all_events_details)} ---")
+            print(f"   - Résumé: {event_details.get('summary')}")
+            print(f"   - Début:  {event_details.get('start_datetime')}")
+            
+            # Utilisation de la fonction existante
+            create_calendar_event(service, event_details)
+    else:
+        print("❌ Opération annulée : Aucune structure d'événement valide retournée par Gemini.")
 
 if __name__ == "__main__":
     main()
