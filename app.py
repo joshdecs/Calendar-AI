@@ -45,7 +45,12 @@ async def schedule_event(
             with open(temp_file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
-        all_events_details = parse_multimodal_content(instruction, file_path=temp_file_path)
+        instruction_for_gemini = instruction if instruction.strip() else "Analyse le fichier pour des événements de calendrier et retourne-les."
+
+        all_events_details = parse_multimodal_content(
+        text_input=instruction_for_gemini, 
+        file_path=temp_file_path
+)
 
         if not all_events_details or not isinstance(all_events_details, list):
             raise HTTPException(status_code=400, detail="L'IA n'a pas pu extraire d'événement valide. (Gemini a retourné 0 événement ou un format incorrect).")

@@ -74,22 +74,27 @@ def parse_multimodal_content(text_input, file_path=None, timezone='America/Toron
 
     try:
         response = client.models.generate_content(
-            model='gemini-2.5-pro', 
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                response_mime_type="application/json",
-                response_schema=CALENDAR_EVENTS_SCHEMA, 
-            )
         )
-        
         
         if file_path:
             client.files.delete(name=uploaded_file.name)
             
         json_string = response.text
-        return json.loads(json_string)
+        
+        if not json_string or json_string.strip() == "":
+            print("Gemini a retourné une réponse vide ou non parsable (500 INTERNE possible).")
+            return [] 
+            
+        return json.loads(json_string) 
 
+    except json.JSONDecodeError as e:
+        print(f"Erreur de décodage JSON de la réponse Gemini: {e}")
+        print(f"Réponse reçue (début) : {json_string[:100]}") 
+        
+        if file_path and 'uploaded_file' in locals():
+             client.files.delete(name=uploaded_file.name)
+        return []
+    
     except Exception as e:
         print(f"Erreur lors de l'appel à Gemini (dans gemini_call1.py) : {e}")
         if file_path and 'uploaded_file' in locals():
