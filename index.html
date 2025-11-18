@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendar Auto-Agent</title>
     <style>
-        /* Styles CSS pour un look mobile-friendly */
         body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f4f4f9; }
         #main-container { width: 90%; max-width: 500px; background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         h1 { color: #4285F4; text-align: center; margin-bottom: 20px; }
@@ -48,12 +47,8 @@
 </div>
 
 <script>
-    // *************************************************************
-    // ⚠️ REMPLACER VOTRE URL ICI !
-    // *************************************************************
     const API_ENDPOINT = 'https://web-production-d5887.up.railway.app/schedule_event'; 
     
-    // Éléments DOM
     const recordButton = document.getElementById('record-button');
     const stopButton = document.getElementById('stop-button');
     const sendButton = document.getElementById('send-button');
@@ -64,13 +59,8 @@
     let mediaRecorder;
     let audioChunks = [];
 
-    // ----------------------------------------------------------------
-    // 1. GESTION DE L'ENREGISTREMENT VOCAL (JavaScript)
-    // ----------------------------------------------------------------
-
     recordButton.onclick = async () => {
         try {
-            // Demande l'accès au microphone
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
             audioChunks = [];
@@ -83,14 +73,12 @@
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm; codecs=opus' });
                 const audioFile = new File([audioBlob], "voice_memo.webm", { type: 'audio/webm; codecs=opus' });
                 
-                // Assigner l'audio au champ de fichier invisible pour l'envoi
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(audioFile);
                 fileInput.files = dataTransfer.files;
 
                 statusMessage.textContent = "✅ Audio enregistré et prêt à être planifié.";
                 
-                // Arrêter la piste du micro
                 stream.getTracks().forEach(track => track.stop());
             };
 
@@ -113,10 +101,6 @@
         }
     };
 
-    // ----------------------------------------------------------------
-    // 2. ENVOI DES DONNÉES À L'API FASTAPI (Upload Multimodal)
-    // ----------------------------------------------------------------
-
     sendButton.onclick = async () => {
         const formData = new FormData();
         const instruction = instructionText.value.trim();
@@ -127,10 +111,8 @@
             return;
         }
 
-        // Ajouter l'instruction texte (même si elle est vide, nous envoyons au moins la requête)
         formData.append('instruction', instruction || 'Planifie l\'événement contenu dans le fichier.');
 
-        // Ajouter le fichier (si présent)
         if (file) {
             formData.append('file', file);
         }
@@ -152,8 +134,8 @@
                      msg += ` Le premier événement est : ${result.events[0].summary}.`;
                 }
                 statusMessage.textContent = msg;
-                instructionText.value = ''; // Nettoyer le champ après succès
-                fileInput.value = ''; // Réinitialiser le fichier
+                instructionText.value = '';
+                fileInput.value = '';
             } else {
                 statusMessage.textContent = `❌ Erreur (${response.status}) : ${result.detail || 'Erreur inconnue.'}`;
             }
@@ -166,7 +148,6 @@
         }
     };
 
-    // Initialisation
     statusMessage.textContent = `Prêt. L'API est configurée pour : ${API_ENDPOINT}`;
 
 </script>
