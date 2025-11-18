@@ -1,4 +1,3 @@
-
 import os
 import shutil
 import json
@@ -12,27 +11,23 @@ from gemini_call1 import parse_multimodal_content
 
 app = FastAPI(title="Calendar Auto-Agent API")
 
-
 def get_calendar_service():
-    """Authentifie l'utilisateur et retourne l'objet service."""
     try:
         creds = authenticate_google_calendar()
         service = build("calendar", "v3", credentials=creds)
         return service
     except Exception as e:
-        print(f"Erreur d'authentification Google : {e}")
         raise HTTPException(status_code=500, detail="Échec de l'authentification Google Calendar.")
 
 @app.get("/health")
 def health_check():
     return {"status": "ok", "message": "Calendar Agent is running."}
 
-# Endpoint principal pour l'analyse et la planification (Multimodal)
 @app.post("/schedule_event")
 async def schedule_event(
     instruction: str = Form(..., description="Requête texte ou instruction pour l'IA."),
     file: Optional[UploadFile] = File(None, description="Fichier audio, image, ou document à analyser."),
-    service: object = Depends(get_calendar_service) # Injecte le service Calendar authentifié
+    service: object = Depends(get_calendar_service)
 ):
     temp_file_path = None
     
@@ -48,9 +43,9 @@ async def schedule_event(
         instruction_for_gemini = instruction if instruction.strip() else "Analyse le fichier pour des événements de calendrier et retourne-les."
 
         all_events_details = parse_multimodal_content(
-        text_input=instruction_for_gemini, 
-        file_path=temp_file_path
-)
+            text_input=instruction_for_gemini, 
+            file_path=temp_file_path
+        )
 
         if not all_events_details or not isinstance(all_events_details, list):
             raise HTTPException(status_code=400, detail="L'IA n'a pas pu extraire d'événement valide. (Gemini a retourné 0 événement ou un format incorrect).")
@@ -67,7 +62,6 @@ async def schedule_event(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Erreur interne lors du traitement : {e}")
         raise HTTPException(status_code=500, detail=f"Erreur interne lors de la planification: {e}")
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
