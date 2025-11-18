@@ -39,8 +39,23 @@ def parse_multimodal_content(text_input, file_path=None, timezone='America/Toron
         uploaded_file = client.files.upload(file=file_path)
         contents.append(uploaded_file)
         
-        print("Attente de l'activation du fichier (0 secondes)...")
-        time.sleep(20) 
+        timeout = 60  
+        start_time = time.time()
+        print("Vérification dynamique du statut du fichier (max 60s)...")
+        
+        while time.time() - start_time < timeout:
+            file_status = client.files.get(name=uploaded_file.name)
+            
+            if file_status.state.name == 'ACTIVE':
+                print(f"✅ Fichier actif après {int(time.time() - start_time)} secondes. Procéder à l'analyse.")
+                break 
+            
+            if file_status.state.name == 'FAILED':
+                raise Exception(f"Le traitement du fichier a échoué sur Gemini: {file_status.name}")
+            
+            time.sleep(2) 
+        else:
+            raise TimeoutError("Le fichier n'est pas devenu actif dans le délai imparti (60s).")
 
         contents.append(text_input)
 
