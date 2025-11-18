@@ -39,8 +39,8 @@ def parse_multimodal_content(text_input, file_path=None, timezone='America/Toron
         uploaded_file = client.files.upload(file=file_path)
         contents.append(uploaded_file)
         
-        print("Attente de l'activation du fichier (2 secondes)...")
-        time.sleep(2) 
+        print("Attente de l'activation du fichier (0 secondes)...")
+        time.sleep(20) 
 
         contents.append(text_input)
 
