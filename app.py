@@ -28,6 +28,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    return {"Hello": "Calendar Agent is active. Use /schedule_event."}
+
 def get_calendar_service():
     try:
         creds = authenticate_google_calendar()
