@@ -12,10 +12,6 @@ from gemini_call1 import parse_multimodal_content
 
 app = FastAPI(title="Calendar Auto-Agent API")
 
-# ====================================================================
-# CONFIGURATION CORS (ESSENTIELLE POUR LE FRONTEND)
-# ====================================================================
-
 origins = [
     "*",
 ]
@@ -28,10 +24,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def read_root():
-    return {"Hello": "Calendar Agent is active. Use /schedule_event."}
-
 def get_calendar_service():
     try:
         creds = authenticate_google_calendar()
@@ -39,6 +31,10 @@ def get_calendar_service():
         return service
     except Exception as e:
         raise HTTPException(status_code=500, detail="Échec de l'authentification Google Calendar.")
+
+@app.get("/")
+def read_root():
+    return {"message": "Calendar Auto-Agent API is running. Use /schedule_event to plan events."}
 
 @app.get("/health")
 def health_check():
