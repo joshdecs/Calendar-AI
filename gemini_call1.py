@@ -67,35 +67,29 @@ def parse_multimodal_content(text_input, file_path=None, timezone='America/Toron
             + timezone
         )
         
-        for attempt in range(2):
-            try:
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_instruction,
-                        response_mime_type="application/json",
-                        response_schema=CALENDAR_EVENTS_SCHEMA,
-                    )
-                )
-                
-                json_string = response.text
-                
-                if not json_string or json_string.strip() == "":
-                    raise json.JSONDecodeError("Réponse Gemini vide ou non parsable.")
-                    
-                return json.loads(json_string)
-
-            except json.JSONDecodeError:
-                if attempt == 0:
-                    time.sleep(2) 
-                    continue
-                else:
-                    raise Exception("Le format JSON de la réponse Gemini est invalide après 2 tentatives.")
+        # --- NOUVEAU: Simplification de la logique de décodage pour la stabilité ---
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                response_mime_type="application/json",
+                response_schema=CALENDAR_EVENTS_SCHEMA,
+            )
+        )
+        
+        json_string = response.text
+        
+        # Tentative unique de décodage
+        if not json_string or json_string.strip() == "":
+            return []
             
-            except Exception as e:
-                raise
+        return json.loads(json_string)
 
+    except json.JSONDecodeError:
+        # En cas d'échec du décodage après l'analyse vocale, on retourne une liste vide
+        return []
+    
     except Exception as e:
         raise
     
