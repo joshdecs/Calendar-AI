@@ -62,7 +62,10 @@
     recordButton.onclick = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
+            
+            // Tente de forcer l'enregistrement au format OGG
+            const options = { mimeType: 'audio/ogg; codecs=opus' };
+            mediaRecorder = new MediaRecorder(stream, options);
             audioChunks = [];
 
             mediaRecorder.ondataavailable = event => {
@@ -70,8 +73,8 @@
             };
 
             mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/webm; codecs=opus' });
-                const audioFile = new File([audioBlob], "voice_memo.webm", { type: 'audio/webm; codecs=opus' });
+                const audioBlob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
+                const audioFile = new File([audioBlob], "voice_memo.ogg", { type: 'audio/ogg; codecs=opus' });
                 
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(audioFile);
