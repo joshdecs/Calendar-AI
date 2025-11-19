@@ -63,8 +63,7 @@
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             
-            // Tente de forcer l'enregistrement au format OGG
-            const options = { mimeType: 'audio/ogg; codecs=opus' };
+            const options = { mimeType: 'audio/webm' };
             mediaRecorder = new MediaRecorder(stream, options);
             audioChunks = [];
 
@@ -73,8 +72,8 @@
             };
 
             mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
-                const audioFile = new File([audioBlob], "voice_memo.ogg", { type: 'audio/ogg; codecs=opus' });
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const audioFile = new File([audioBlob], "voice_memo.webm", { type: 'audio/webm' });
                 
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(audioFile);
