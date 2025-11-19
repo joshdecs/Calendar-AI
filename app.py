@@ -3,6 +3,7 @@ import shutil
 import json
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from googleapiclient.discovery import build
 from typing import Optional
 
@@ -10,6 +11,22 @@ from create_event import authenticate_google_calendar, create_calendar_event
 from gemini_call1 import parse_multimodal_content 
 
 app = FastAPI(title="Calendar Auto-Agent API")
+
+# ====================================================================
+# CONFIGURATION CORS (ESSENTIELLE POUR LE FRONTEND)
+# ====================================================================
+
+origins = [
+    "*",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_calendar_service():
     try:
