@@ -47,7 +47,7 @@
 </div>
 
 <script>
-    const API_ENDPOINT = 'https://calendar-ai-qmd9.onrender.com'; 
+    const API_ENDPOINT = 'https://calendar-ai-qmd9.onrender.com/schedule_event'; 
     
     const recordButton = document.getElementById('record-button');
     const stopButton = document.getElementById('stop-button');
@@ -63,7 +63,7 @@
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             
-            const options = { mimeType: 'audio/mp4' }; 
+            const options = { mimeType: 'audio/webm' }; 
             mediaRecorder = new MediaRecorder(stream, options);
             audioChunks = [];
 
@@ -72,8 +72,8 @@
             };
 
             mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' });
-                const audioFile = new File([audioBlob], "voice_memo.mp4", { type: 'audio/mp4' });
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const audioFile = new File([audioBlob], "voice_memo.webm", { type: 'audio/webm' });
                 
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(audioFile);
