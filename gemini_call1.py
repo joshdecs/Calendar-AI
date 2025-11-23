@@ -62,6 +62,7 @@ def parse_multimodal_content(text_input, file_path=None, timezone='America/Toron
             2. Le format doit être strictement ISO 8601 (YYYY-MM-DDTHH:MM:SS).
             3. Si la plage horaire traverse minuit, vous devez calculer la date de fin au jour suivant.
             4. Si la durée n'est pas précisée, utilisez une durée d'une heure (60 minutes).
+            5. Si le mois et/ou l'année n'est pas précisé prendre le mois et/ou l'année actuelle comme valeur par defaut
             
             Tenez compte de la date/heure actuelle. Le fuseau horaire actuel est : """ 
             + timezone
